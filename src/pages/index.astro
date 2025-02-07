@@ -4,11 +4,13 @@ import ButtonEdge from "../components/ButtonEdge.svelte";
 import IconWeight from "../components/IconWeight.svelte";
 import HoverClick from "../components/HoverClick.svelte";
 import SpotlightGradient from "../components/SpotlightGradient.svelte";
+import HoverCard from "../components/HoverCard.svelte";
 ---
 
 <Layout title="UI Practice">
   <article>
     <h1>UI Practice</h1>
+    <HoverCard client:visible />
     <SpotlightGradient client:visible />
     <ButtonEdge client:visible />
     <IconWeight client:visible />
