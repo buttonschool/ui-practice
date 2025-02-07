@@ -35,7 +35,7 @@
   .controls {
     border-block-start: 1px solid #fff2;
     display: grid;
-    grid-template-columns: minmax(6em, max-content) 1fr 6em;
+    grid-template-columns: minmax(6em, max-content) 8em 1fr;
     grid-auto-rows: min-content;
     gap: 2em 1em;
     padding: 2em;

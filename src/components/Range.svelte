@@ -9,11 +9,11 @@
 </script>
 
 <label for={name}>{label}</label>
-<input type="range" {min} {max} {step} bind:value />
-<small>
+<div>
   <input id={name} type="number" {min} {max} {step} bind:value />
-  {unit}
-</small>
+  <small>{unit}</small>
+</div>
+<input type="range" {min} {max} {step} bind:value />
 
 <style>
   small {
