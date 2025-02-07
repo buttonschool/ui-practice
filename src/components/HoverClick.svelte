@@ -24,14 +24,29 @@
 </script>
 
 <Widget {props}>
-  <div class="group">
-    <button class="primary">Send</button>
-    <button>Cancel</button>
+  <div class="stack">
+    <div class="row">
+      <button class="primary">Send</button>
+      <button>Cancel</button>
+    </div>
+    <div class="row hovered">
+      <button class="primary">Send</button>
+      <button>Cancel</button>
+    </div>
+    <div class="row pressed">
+      <button class="primary">Send</button>
+      <button>Cancel</button>
+    </div>
   </div>
 </Widget>
 
 <style>
-  .group {
+  .stack {
+    display: flex;
+    flex-direction: column;
+    gap: 2em;
+  }
+  .row {
     display: flex;
     gap: 1em;
   }
@@ -63,11 +78,13 @@
     --l-start-default: 53%;
     --l-end-default: 30%;
   }
-  button:hover {
+  button:hover,
+  .hovered button {
     --l-start: calc(var(--l-start-default) * var(--l-change-hover));
     --l-end: calc(var(--l-end-default) * var(--l-change-hover));
   }
-  button:active {
+  button:active,
+  .pressed button {
     --l-start: calc(var(--l-start-default) * var(--l-change-active));
     --l-end: calc(var(--l-end-default) * var(--l-change-active));
   }
