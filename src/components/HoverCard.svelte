@@ -31,7 +31,12 @@
     },
   ];
 
-  const handleMove = (x, y, rect, target) => {
+  const handleMouseMove = ({ target, clientX, clientY }) => {
+    const rect = target.getBoundingClientRect();
+
+    const x = clientX - rect.left;
+    const y = clientY - rect.top;
+
     const cursorX = `${x / rect.width}`;
     const cursorY = `${y / rect.height}`;
 
@@ -39,13 +44,6 @@
       target.style.setProperty("--cursor-x", cursorX);
       target.style.setProperty("--cursor-y", cursorY);
     });
-  };
-
-  const handleMouseMove = ({ target, clientX, clientY }) => {
-    const rect = target.getBoundingClientRect();
-    const x = clientX - rect.left;
-    const y = clientY - rect.top;
-    handleMove(x, y, rect, target);
   };
 
   const resetStyles = ({ target }) => {
