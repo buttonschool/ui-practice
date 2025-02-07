@@ -15,7 +15,7 @@
 </script>
 
 <Widget {props}>
-  <div class="group">
+  <div class="buttons">
     <button class="primary">
       <svg
         xmlns="http://www.w3.org/2000/svg"
@@ -71,7 +71,7 @@
 </Widget>
 
 <style>
-  .group {
+  .buttons {
     display: flex;
     gap: 1em;
   }
