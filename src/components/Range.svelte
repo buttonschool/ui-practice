@@ -21,11 +21,15 @@
     font-variant-numeric: tabular-nums;
   }
   [type="number"] {
-    background: none;
-    border: solid 1px #fff1;
+    background: #fff1;
+    border: solid 1px #fff0;
+    border-radius: 0.25em;
     padding: 0.5em 0.75em;
+    &:hover {
+      border-color: #fff2;
+    }
     &:focus {
-      border-color: #fff4;
+      border-color: dodgerblue;
       outline: none;
     }
   }

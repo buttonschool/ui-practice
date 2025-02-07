@@ -21,19 +21,23 @@
 
 <style>
   .exercise {
-    border: 1px solid #fff3;
+    background-color: #222;
+    border: 1px solid #fff1;
     border-radius: 0.5em;
     overflow: hidden;
+    box-shadow:
+      0 0.5em 1em -0.5em #0008,
+      0 0.5em 2em #0004;
   }
   .canvas {
     display: flex;
     aspect-ratio: 16 / 9;
     justify-content: center;
     align-items: center;
-    background-color: #222;
+    background-color: #191919;
   }
   .controls {
-    border-block-start: 1px solid #fff2;
+    border-block-start: 1px solid #fff1;
     display: grid;
     grid-template-columns: minmax(6em, max-content) 8em 1fr;
     grid-auto-rows: min-content;
@@ -48,7 +52,7 @@
     }
     .controls {
       border-block-start: none;
-      border-inline-start: 1px solid #fff2;
+      border-inline-start: 1px solid #fff1;
     }
   }
 </style>
