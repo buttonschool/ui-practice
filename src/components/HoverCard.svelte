@@ -87,6 +87,9 @@
     --light-blue: 0.85 0.9 1;
     --light-pink: 1 0.75 1;
 
+    --cursor-x: 0.5;
+    --cursor-y: 0.5;
+
     --rotate-x: calc((var(--cursor-y) - 0.5) * var(--tilt));
     --rotate-y: calc((var(--cursor-x) - 0.5) * -1 * var(--tilt));
     --translate-x: calc((var(--cursor-x) - 0.5) * var(--shift));
