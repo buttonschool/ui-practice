@@ -3,11 +3,13 @@ import Layout from "../layouts/Layout.astro";
 import ButtonEdge from "../components/ButtonEdge.svelte";
 import IconWeight from "../components/IconWeight.svelte";
 import HoverClick from "../components/HoverClick.svelte";
+import SpotlightGradient from "../components/SpotlightGradient.svelte";
 ---
 
 <Layout title="UI Practice">
   <article>
     <h1>UI Practice</h1>
+    <SpotlightGradient client:visible />
     <ButtonEdge client:visible />
     <IconWeight client:visible />
     <HoverClick client:visible />
@@ -19,7 +21,7 @@ import HoverClick from "../components/HoverClick.svelte";
     display: flex;
     flex-direction: column;
     gap: 2rem;
-    max-inline-size: 700px;
     margin: 2rem auto;
+    padding: 0 2rem;
   }
 </style>

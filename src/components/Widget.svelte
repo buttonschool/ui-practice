@@ -36,8 +36,19 @@
     border-block-start: 1px solid #fff2;
     display: grid;
     grid-template-columns: minmax(6em, max-content) 1fr 6em;
+    grid-auto-rows: min-content;
     gap: 2em 1em;
     padding: 2em;
     align-items: center;
+  }
+  @media screen and (min-width: 1024px) {
+    .exercise {
+      display: grid;
+      grid-template-columns: 2fr 1fr;
+    }
+    .controls {
+      border-block-start: none;
+      border-inline-start: 1px solid #fff2;
+    }
   }
 </style>
