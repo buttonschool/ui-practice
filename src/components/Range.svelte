@@ -29,7 +29,7 @@
       border-color: #fff2;
     }
     &:focus {
-      border-color: dodgerblue;
+      border-color: aquamarine;
       outline: none;
     }
   }
