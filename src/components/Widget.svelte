@@ -39,9 +39,9 @@
   .controls {
     border-block-start: 1px solid #fff1;
     display: grid;
-    grid-template-columns: minmax(6em, max-content) 8em 1fr;
+    grid-template-columns: max-content 1fr max-content;
     grid-auto-rows: min-content;
-    gap: 2em 1em;
+    gap: 2em 1.5em;
     padding: 2em;
     align-items: center;
   }
