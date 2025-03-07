@@ -169,7 +169,10 @@
           }
         }
         grid = grid.map((r) => [...r]);
-        pairs = [...pairs];
+        // Force reactivity: update the pairs array so that the SVG polyline re-renders
+        pairs = pairs.map((p) =>
+          p.color === currentColor ? { ...p, path: [...currentPath] } : p
+        );
       }
       return;
     }
@@ -229,6 +232,10 @@
     });
     grid = grid.map((r) => [...r]);
     pair.path = [];
+    // Force reactivity: update the pairs array so that the SVG polyline is removed
+    pairs = pairs.map((p) =>
+      p.color === currentColor ? { ...p, path: [] } : p
+    );
     collidingCell = null;
   }
 
