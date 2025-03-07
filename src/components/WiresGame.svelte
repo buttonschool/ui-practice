@@ -205,19 +205,18 @@
 </script>
 
 <Widget {props}>
+  <!-- svelte-ignore a11y-no-noninteractive-element-interactions -->
   <div class="container" role="application" on:mouseup|capture={handleMouseUp}>
     <!-- The clickable grid -->
     <div class="board" style={boardStyle}>
       {#each grid as row, r}
         {#each row as cellColor, c}
-          <div
+          <button
             class="cell"
-            role="button"
-            tabindex="0"
             style="width: {cellSize}px; height: {cellSize}px;"
             on:mousedown|preventDefault={() => handleMouseDown(r, c)}
             on:mouseenter={() => handleMouseEnter(r, c)}
-          ></div>
+          ></button>
         {/each}
       {/each}
     </div>
@@ -278,7 +277,6 @@
     background-color: #fff; /* White so the overlay lines are visible */
     /* Ensures no browser-native drag starts if you move quickly */
     -webkit-user-drag: none;
-    user-drag: none;
   }
 
   .overlay {
