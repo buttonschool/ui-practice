@@ -226,18 +226,18 @@
       {#each pairs as pair}
         {#if pair.path && pair.path.length > 1}
           <!-- White underlay for contrast -->
-          <polyline
+          <!-- <polyline
             stroke="white"
             stroke-width="14"
             fill="none"
             stroke-linecap="round"
             stroke-linejoin="round"
             points={pointsFor(pair.path)}
-          />
+          /> -->
           <!-- Colored wire on top -->
           <polyline
             stroke={pair.color}
-            stroke-width="10"
+            stroke-width="12"
             fill="none"
             stroke-linecap="round"
             stroke-linejoin="round"
@@ -251,9 +251,9 @@
             cx={c * (cellSize + gridGap) + cellSize / 2}
             cy={r * (cellSize + gridGap) + cellSize / 2}
             r={cellSize * 0.2}
-            fill={pair.color}
-            stroke="black"
-            stroke-width="2"
+            fill="black"
+            stroke={pair.color}
+            stroke-width="8"
           />
         {/each}
       {/each}
@@ -266,23 +266,30 @@
     position: relative;
     width: max-content;
     user-select: none;
+    background-color: rgb(251, 190, 4);
+    padding: 1rem;
+    border-radius: 0.5rem;
+    box-shadow: 0 1rem 0 0 rgb(204, 153, 2);
   }
 
   .board {
     display: grid;
+    background-color: #111;
+    padding: 0.25rem;
+    border-radius: 0.25rem;
   }
 
   .cell {
-    border: 1px solid #999;
-    background-color: #fff; /* White so the overlay lines are visible */
+    border: 1px solid #222;
+    background-color: #333;
     /* Ensures no browser-native drag starts if you move quickly */
     -webkit-user-drag: none;
   }
 
   .overlay {
     position: absolute;
-    top: 0;
-    left: 0;
+    top: 1.25rem;
+    left: 1.25rem;
     pointer-events: none; /* Let clicks pass through to .board */
     z-index: 10;
   }
