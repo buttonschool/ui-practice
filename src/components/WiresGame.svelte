@@ -151,9 +151,7 @@
   // New helper to clear a pair's drawn path from the grid (except endpoints)
   function clearPathForPair(pair) {
     pair.path.forEach(([r, c]) => {
-      if (!isEndpoint(pair, r, c)) {
-        grid[r][c] = null;
-      }
+      grid[r][c] = null;
     });
     pair.path = [];
     grid = grid.map((r) => [...r]);
@@ -250,9 +248,7 @@
   function revertCurrentPath() {
     const pair = getPair(currentColor);
     currentPath.forEach(([r, c]) => {
-      if (!isEndpoint(pair, r, c)) {
-        grid[r][c] = null;
-      }
+      grid[r][c] = null;
     });
     grid = grid.map((r) => [...r]);
     pair.path = [];
