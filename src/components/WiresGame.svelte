@@ -3,31 +3,13 @@
 
   let props = [
     {
-      name: "size",
-      label: "Size",
-      value: 6,
-      min: 3,
-      max: 8,
-      step: 1,
-      unit: "",
-    },
-    {
-      name: "cellSize",
-      label: "Cell Size",
-      value: 50,
-      min: 20,
-      max: 100,
-      step: 5,
-      unit: "px",
-    },
-    {
-      name: "gridGap",
-      label: "Grid Gap",
+      name: "frame-width",
+      label: "Frame Width",
       value: 2,
-      min: 0,
-      max: 10,
-      step: 1,
-      unit: "px",
+      min: 1,
+      max: 6,
+      step: 0.125,
+      unit: "rem",
     },
   ];
 
@@ -47,7 +29,7 @@
       path: [],
     },
     {
-      color: "grey",
+      color: "aquamarine",
       endpoints: [
         [0, 1],
         [4, 2],
@@ -55,7 +37,7 @@
       path: [],
     },
     {
-      color: "purple",
+      color: "dodgerblue",
       endpoints: [
         [0, 3],
         [1, 1],
@@ -71,7 +53,7 @@
       path: [],
     },
     {
-      color: "yellow",
+      color: "orange",
       endpoints: [
         [1, 4],
         [5, 5], // bottom-right
@@ -213,7 +195,8 @@
         {#each row as cellColor, c}
           <button
             class="cell"
-            style="width: {cellSize}px; height: {cellSize}px;"
+            style="width: {cellSize}px; height: {cellSize}px; --color: {cellColor ||
+              'transparent'}"
             on:mousedown|preventDefault={() => handleMouseDown(r, c)}
             on:mouseenter={() => handleMouseEnter(r, c)}
           ></button>
@@ -237,7 +220,7 @@
           <!-- Colored wire on top -->
           <polyline
             stroke={pair.color}
-            stroke-width="12"
+            stroke-width="8"
             fill="none"
             stroke-linecap="round"
             stroke-linejoin="round"
@@ -266,30 +249,47 @@
     position: relative;
     width: max-content;
     user-select: none;
-    background-color: rgb(251, 190, 4);
-    padding: 1rem;
-    border-radius: 0.5rem;
-    box-shadow: 0 1rem 0 0 rgb(204, 153, 2);
+    background-color: rgb(237, 236, 223);
+    padding: var(--frame-width);
+    border-radius: calc(var(--frame-width) + 0.75rem);
+    box-shadow: 0 1rem 0 0 rgb(211, 209, 201);
+    overflow: hidden;
+  }
+  .container::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(
+      30deg,
+      transparent 60%,
+      rgba(255, 255, 255, 0.05) 60%
+    );
+    pointer-events: none;
   }
 
   .board {
     display: grid;
     background-color: #111;
     padding: 0.25rem;
-    border-radius: 0.25rem;
+    border-radius: 0.75rem;
   }
 
   .cell {
-    border: 1px solid #222;
+    border-radius: 0.5rem;
+    border: none;
     background-color: #333;
+    background-color: color-mix(in oklch, #333 80%, var(--color));
     /* Ensures no browser-native drag starts if you move quickly */
     -webkit-user-drag: none;
   }
 
   .overlay {
     position: absolute;
-    top: 1.25rem;
-    left: 1.25rem;
+    top: calc(var(--frame-width) + 0.25rem);
+    left: calc(var(--frame-width) + 0.25rem);
     pointer-events: none; /* Let clicks pass through to .board */
     z-index: 10;
   }
