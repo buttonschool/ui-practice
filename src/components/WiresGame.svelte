@@ -132,32 +132,42 @@
   function handlePointerMove(row, col) {
     if (!isDragging || !currentColor) return;
 
-    // If cell is occupied by a different color, check if it's in our path (backtracking) or a collision
+    // Ensure movement is only to adjacent cells (no diagonal or jump moves)
+    if (currentPath.length > 0) {
+      const [lastRow, lastCol] = currentPath[currentPath.length - 1];
+      const dr = row - lastRow;
+      const dc = col - lastCol;
+      // Only allow moves where Manhattan distance equals 1
+      if (Math.abs(dr) + Math.abs(dc) !== 1) {
+        return; // Ignore non-adjacent moves
+      }
+    }
+
+    // If the cell is occupied by a different color, check if it's in our path (backtracking) or a collision
     if (grid[row][col] && grid[row][col] !== currentColor) {
       let index = currentPath.findIndex(([r, c]) => r === row && c === col);
       if (index >= 0) {
-        // This is a cell in our existing path => backtrack to that point
+        // Backtracking: remove cells after this one
         currentPath = currentPath.slice(0, index + 1);
         const pair = getPair(currentColor);
         pair.path = [...currentPath];
-        // Clear any later cells from the grid if needed
         grid = grid.map((r) => [...r]);
         pairs = [...pairs];
         return;
       } else {
-        // Collision with another color => highlight the cell
+        // Otherwise, it's a collision – highlight the cell and do nothing
         collidingCell = [row, col];
         return;
       }
     }
 
-    // If the cell is already ours and in the path, do nothing
+    // If the cell is already ours and part of our path, do nothing
     if (grid[row][col] === currentColor) {
       const index = currentPath.findIndex(([r, c]) => r === row && c === col);
       if (index >= 0) return;
     }
 
-    // Otherwise, occupy this cell with currentColor
+    // Otherwise, mark the cell with currentColor and extend the path
     grid[row][col] = currentColor;
     grid = grid.map((r) => [...r]);
 
@@ -166,7 +176,7 @@
     pair.path = [...currentPath];
     pairs = [...pairs];
 
-    // If we were highlighting a collision, remove it if we've moved there
+    // Clear any collision highlight if we're now on that cell
     if (collidingCell && collidingCell[0] === row && collidingCell[1] === col) {
       collidingCell = null;
     }
