@@ -12,6 +12,33 @@
       step: 0.125,
       unit: "rem",
     },
+    {
+      name: "reflection-angle",
+      label: "Reflection Angle",
+      value: 30,
+      min: 0,
+      max: 90,
+      step: 1,
+      unit: "deg",
+    },
+    {
+      name: "reflection-offset",
+      label: "Reflection Offset",
+      value: 60,
+      min: 0,
+      max: 100,
+      step: 1,
+      unit: "%",
+    },
+    {
+      name: "reflection-opacity",
+      label: "Reflection Opacity",
+      value: 0.05,
+      min: 0,
+      max: 1,
+      step: 0.01,
+      unit: "",
+    },
   ];
 
   // Board configuration
@@ -340,6 +367,7 @@
     overflow: hidden;
   }
   .container::before {
+    --reflection-color: rgba(255, 255, 255, var(--reflection-opacity));
     content: "";
     position: absolute;
     top: 0;
@@ -347,9 +375,9 @@
     width: 100%;
     height: 100%;
     background: linear-gradient(
-      30deg,
-      transparent 60%,
-      rgba(255, 255, 255, 0.05) 60%
+      var(--reflection-angle),
+      transparent var(--reflection-offset),
+      var(--reflection-color) var(--reflection-offset)
     );
     pointer-events: none;
   }
