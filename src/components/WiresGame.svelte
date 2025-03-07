@@ -30,7 +30,7 @@
       path: [],
     },
     {
-      color: "aquamarine",
+      color: "springgreen",
       endpoints: [
         [0, 1],
         [4, 2],
@@ -38,7 +38,7 @@
       path: [],
     },
     {
-      color: "dodgerblue",
+      color: "deepskyblue",
       endpoints: [
         [0, 3],
         [1, 1],
@@ -46,7 +46,7 @@
       path: [],
     },
     {
-      color: "red",
+      color: "orangered",
       endpoints: [
         [0, 4],
         [4, 5],
@@ -54,7 +54,7 @@
       path: [],
     },
     {
-      color: "orange",
+      color: "gold",
       endpoints: [
         [1, 4],
         [5, 5], // bottom-right
