@@ -1,0 +1,291 @@
+<script>
+  import Widget from "./Widget.svelte";
+
+  let props = [
+    {
+      name: "size",
+      label: "Size",
+      value: 6,
+      min: 3,
+      max: 8,
+      step: 1,
+      unit: "",
+    },
+    {
+      name: "cellSize",
+      label: "Cell Size",
+      value: 50,
+      min: 20,
+      max: 100,
+      step: 5,
+      unit: "px",
+    },
+    {
+      name: "gridGap",
+      label: "Grid Gap",
+      value: 2,
+      min: 0,
+      max: 10,
+      step: 1,
+      unit: "px",
+    },
+  ];
+
+  // Dimensions & styling
+  let size = 6;
+  let cellSize = 50;
+  let gridGap = 2;
+
+  // Your chosen color pairs + endpoints
+  let pairs = [
+    {
+      color: "hotpink",
+      endpoints: [
+        [0, 0], // top-left
+        [5, 0], // bottom-left
+      ],
+      path: [],
+    },
+    {
+      color: "grey",
+      endpoints: [
+        [0, 1],
+        [4, 2],
+      ],
+      path: [],
+    },
+    {
+      color: "purple",
+      endpoints: [
+        [0, 3],
+        [1, 1],
+      ],
+      path: [],
+    },
+    {
+      color: "red",
+      endpoints: [
+        [0, 4],
+        [4, 5],
+      ],
+      path: [],
+    },
+    {
+      color: "yellow",
+      endpoints: [
+        [1, 4],
+        [5, 5], // bottom-right
+      ],
+      path: [],
+    },
+  ];
+
+  // Create a 2D array (size×size), initially null in every cell
+  let grid = Array(size)
+    .fill(null)
+    .map(() => Array(size).fill(null));
+
+  // Place each pair’s endpoints onto the grid
+  pairs.forEach((pair) => {
+    pair.endpoints.forEach(([r, c]) => {
+      grid[r][c] = pair.color;
+    });
+  });
+
+  // State for dragging
+  let isDragging = false;
+  let currentColor = null;
+  let currentPath = [];
+
+  // Helper to find a pair object by color
+  function getPair(color) {
+    return pairs.find((p) => p.color === color);
+  }
+
+  // Mouse down on a cell that has a color => start drawing that color
+  function handleMouseDown(row, col) {
+    console.log("MouseDown on cell", row, col);
+    const color = grid[row][col];
+    if (!color) return;
+
+    const pair = getPair(color);
+    if (!pair) return;
+
+    isDragging = true;
+    currentColor = color;
+    currentPath = [[row, col]];
+  }
+
+  // Mouse enters a new cell while dragging => continue drawing path
+  function handleMouseEnter(row, col) {
+    console.log("MouseEnter cell", row, col);
+    if (!isDragging || !currentColor) return;
+
+    // Collision detection: if occupied by a different color, revert
+    if (grid[row][col] && grid[row][col] !== currentColor) {
+      revertCurrentPath();
+      return;
+    }
+
+    // Mark this cell with the current color
+    grid[row][col] = currentColor;
+    // Force reactivity by reassigning grid
+    grid = grid.map((r) => [...r]);
+
+    currentPath.push([row, col]);
+    const pair = getPair(currentColor);
+    pair.path = [...currentPath];
+    console.log("Current path for", currentColor, pair.path);
+
+    // Force reactivity by reassigning pairs
+    pairs = [...pairs];
+  }
+
+  // Mouse up => check if we ended on a valid endpoint
+  function handleMouseUp() {
+    console.log("MouseUp");
+    if (!isDragging || !currentColor) return;
+
+    const pair = getPair(currentColor);
+    const [end1, end2] = pair.endpoints;
+    const [lastRow, lastCol] = currentPath[currentPath.length - 1];
+
+    // Must end on the matching endpoint or revert
+    const validEnd =
+      (lastRow === end1[0] && lastCol === end1[1]) ||
+      (lastRow === end2[0] && lastCol === end2[1]);
+
+    if (!validEnd) {
+      revertCurrentPath();
+    }
+
+    isDragging = false;
+    currentColor = null;
+    currentPath = [];
+  }
+
+  // Revert any drawn cells that are not endpoints
+  function revertCurrentPath() {
+    console.log("Reverting path:", currentPath);
+    const pair = getPair(currentColor);
+    currentPath.forEach(([r, c]) => {
+      const isEndpoint = pair.endpoints.some(
+        ([er, ec]) => er === r && ec === c
+      );
+      if (!isEndpoint) {
+        grid[r][c] = null;
+      }
+    });
+    grid = grid.map((r) => [...r]);
+    pair.path = [];
+  }
+
+  // Convert path ([ [r,c], [r,c], ... ]) into an SVG polyline string
+  function pointsFor(path) {
+    return path
+      .map(([r, c]) => {
+        // Each cell is offset by (cellSize + gridGap) horizontally & vertically
+        const x = c * (cellSize + gridGap) + cellSize / 2;
+        const y = r * (cellSize + gridGap) + cellSize / 2;
+        return `${x},${y}`;
+      })
+      .join(" ");
+  }
+
+  // Dynamic inline styles
+  $: boardStyle = `
+    grid-template-columns: repeat(${size}, ${cellSize}px);
+    grid-template-rows: repeat(${size}, ${cellSize}px);
+    gap: ${gridGap}px;
+  `;
+  $: overlayStyle = `
+    width: ${size * (cellSize + gridGap)}px;
+    height: ${size * (cellSize + gridGap)}px;
+  `;
+</script>
+
+<Widget {props}>
+  <div class="container" role="application" on:mouseup|capture={handleMouseUp}>
+    <!-- The clickable grid -->
+    <div class="board" style={boardStyle}>
+      {#each grid as row, r}
+        {#each row as cellColor, c}
+          <div
+            class="cell"
+            role="button"
+            tabindex="0"
+            style="width: {cellSize}px; height: {cellSize}px;"
+            on:mousedown|preventDefault={() => handleMouseDown(r, c)}
+            on:mouseenter={() => handleMouseEnter(r, c)}
+          ></div>
+        {/each}
+      {/each}
+    </div>
+
+    <!-- SVG overlay for drawing lines and showing endpoints -->
+    <svg class="overlay" style={overlayStyle}>
+      {#each pairs as pair}
+        {#if pair.path && pair.path.length > 1}
+          <!-- White underlay for contrast -->
+          <polyline
+            stroke="white"
+            stroke-width="14"
+            fill="none"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            points={pointsFor(pair.path)}
+          />
+          <!-- Colored wire on top -->
+          <polyline
+            stroke={pair.color}
+            stroke-width="10"
+            fill="none"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            points={pointsFor(pair.path)}
+          />
+        {/if}
+
+        <!-- Draw endpoints as circles so they're visible -->
+        {#each pair.endpoints as [r, c]}
+          <circle
+            cx={c * (cellSize + gridGap) + cellSize / 2}
+            cy={r * (cellSize + gridGap) + cellSize / 2}
+            r={cellSize * 0.2}
+            fill={pair.color}
+            stroke="black"
+            stroke-width="2"
+          />
+        {/each}
+      {/each}
+    </svg>
+  </div>
+</Widget>
+
+<style>
+  .container {
+    position: relative;
+    width: max-content;
+    user-select: none;
+  }
+
+  .board {
+    display: grid;
+  }
+
+  .cell {
+    border: 1px solid #999;
+    background-color: #fff; /* White so the overlay lines are visible */
+    /* Ensures no browser-native drag starts if you move quickly */
+    -webkit-user-drag: none;
+    user-drag: none;
+  }
+
+  .overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    pointer-events: none; /* Let clicks pass through to .board */
+    z-index: 10;
+  }
+</style>

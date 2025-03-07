@@ -5,6 +5,7 @@ import IconWeight from "../components/IconWeight.svelte";
 import HoverClick from "../components/HoverClick.svelte";
 import SpotlightGradient from "../components/SpotlightGradient.svelte";
 import HoverCard from "../components/HoverCard.svelte";
+import WiresGame from "../components/WiresGame.svelte";
 ---
 
 <Layout title="UI Practice">
@@ -15,6 +16,7 @@ import HoverCard from "../components/HoverCard.svelte";
         An experiment from <a href="https://buttonschool.com">Button School</a>.
       </p>
     </header>
+    <WiresGame client:visible />
     <HoverCard client:visible />
     <SpotlightGradient client:visible />
     <ButtonEdge client:visible />
