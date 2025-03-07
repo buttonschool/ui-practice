@@ -46,7 +46,7 @@
   let cellSize = 50;
   let gridGap = 2;
 
-  // Define color pairs + endpoints
+  // Define color pairs + endpoints; note that endpoints are not prefilled in the grid.
   let pairs = [
     {
       color: "hotpink",
@@ -90,131 +90,101 @@
     },
   ];
 
-  // Create a size×size grid (null if empty, else color string)
-  let grid = Array(size)
-    .fill(null)
-    .map(() => Array(size).fill(null));
-
-  // Remove pre-filling endpoints in grid:
-  // (Endpoints will be shown via the SVG overlay until a valid line is drawn)
+  // computedGrid is derived from the pairs' drawn paths.
+  // It represents the cells that should be highlighted (filled with the pair's color).
+  $: computedGrid = (() => {
+    let g = Array(size)
+      .fill(null)
+      .map(() => Array(size).fill(null));
+    pairs.forEach((pair) => {
+      pair.path.forEach(([r, c]) => {
+        g[r][c] = pair.color;
+      });
+    });
+    return g;
+  })();
 
   // Drag state
   let isDragging = false;
   let currentColor = null;
   let currentPath = [];
-  let collidingCell = null; // highlight if collision with another color
+  let collidingCell = null; // For highlighting collisions
 
-  // New helper: return true if (r, c) is an endpoint for the pair
+  // Helper: return true if (r, c) is an endpoint for the given pair.
   function isEndpoint(pair, r, c) {
     return pair.endpoints.some(([er, ec]) => er === r && ec === c);
   }
 
-  // Helper: find a pair by color
+  // Helper: get a pair by its color.
   function getPair(color) {
     return pairs.find((p) => p.color === color);
   }
 
-  // In startDrawing, update the grid immediately for the starting cell
+  // Helper: get a pair if (r, c) is an endpoint for it.
+  function getPairAt(r, c) {
+    return pairs.find((p) =>
+      p.endpoints.some(([er, ec]) => er === r && ec === c)
+    );
+  }
+
+  // Start drawing from a cell.
+  // If the cell is an endpoint (even if not yet highlighted), use that pair.
+  // Also, if the endpoint already has a drawn path, clicking it clears the path.
   function startDrawing(r, c) {
-    let color = grid[r][c];
-    let pair = null;
-    if (!color) {
-      // If grid is empty here, check if (r, c) is an endpoint for any pair.
-      pair = pairs.find((p) =>
-        p.endpoints.some(([er, ec]) => er === r && ec === c)
-      );
-      if (pair) {
-        color = pair.color;
-      } else {
-        return;
-      }
-    } else {
-      pair = getPair(color);
-      if (!pair) return;
-    }
-    // If the clicked cell is an endpoint and the pair already has a drawn path, clear it.
-    if (isEndpoint(pair, r, c) && pair.path && pair.path.length > 1) {
+    let pair = getPairAt(r, c);
+    if (!pair) return;
+    let color = pair.color;
+    // If clicked on an endpoint and a path already exists, clear it.
+    if (isEndpoint(pair, r, c) && pair.path.length > 0) {
       clearPathForPair(pair);
       return;
     }
     isDragging = true;
     currentColor = color;
     currentPath = [[r, c]];
-    // Highlight the starting cell immediately
-    grid[r][c] = currentColor;
-    grid = grid.map((r) => [...r]);
+    // Set the starting cell into the pair's path.
     pair.path = [...currentPath];
+    pairs = [...pairs];
     collidingCell = null;
-    pairs = [...pairs]; // Force reactivity
   }
 
-  // New helper to clear a pair's drawn path from the grid (except endpoints)
+  // Clear a pair's drawn path.
   function clearPathForPair(pair) {
-    pair.path.forEach(([r, c]) => {
-      grid[r][c] = null;
-    });
     pair.path = [];
-    grid = grid.map((r) => [...r]);
-    pairs = pairs.map((p) => (p.color === pair.color ? { ...p, path: [] } : p));
+    pairs = [...pairs];
   }
 
-  // In handlePointerMove, update the grid for the new cell unconditionally
+  // Handle pointer movement.
+  // Updates the current pair's path (and thus the computedGrid) if movement is valid.
   function handlePointerMove(row, col) {
     if (!isDragging || !currentColor) return;
     const pair = getPair(currentColor);
-
-    // Ensure movement is only to adjacent cells (no diagonal or jump moves)
+    // Allow only adjacent (Manhattan distance 1) moves.
     if (currentPath.length > 0) {
       const [lastRow, lastCol] = currentPath[currentPath.length - 1];
       const dr = row - lastRow;
       const dc = col - lastCol;
-      // Only allow moves where Manhattan distance equals 1
-      if (Math.abs(dr) + Math.abs(dc) !== 1) {
-        return; // Ignore non-adjacent moves
-      }
+      if (Math.abs(dr) + Math.abs(dc) !== 1) return;
     }
-
-    // Check if the cell is already in our current path (for backtracking)
+    // Backtracking: if the cell is already in the path, truncate the path there.
     const index = currentPath.findIndex(([r, c]) => r === row && c === col);
     if (index >= 0) {
       if (index < currentPath.length - 1) {
         currentPath = currentPath.slice(0, index + 1);
         pair.path = [...currentPath];
-        // Clear any grid cells that are no longer in the path (but keep endpoints intact)
-        for (let i = 0; i < size; i++) {
-          for (let j = 0; j < size; j++) {
-            if (grid[i][j] === currentColor) {
-              const inPath = currentPath.some(
-                ([pr, pc]) => pr === i && pc === j
-              );
-              if (!inPath && !isEndpoint(pair, i, j)) {
-                grid[i][j] = null;
-              }
-            }
-          }
-        }
-        grid = grid.map((r) => [...r]);
-        pairs = pairs.map((p) =>
-          p.color === currentColor ? { ...p, path: [...currentPath] } : p
-        );
       }
       return;
     }
-
-    // If the cell is occupied by a different color (and it's not an endpoint for our pair), highlight collision and do nothing
+    // Collision check: if computedGrid already has a different color here and it's not an endpoint.
     if (
-      grid[row][col] &&
-      grid[row][col] !== currentColor &&
+      computedGrid[row][col] &&
+      computedGrid[row][col] !== currentColor &&
       !isEndpoint(pair, row, col)
     ) {
       collidingCell = [row, col];
       return;
     }
-
     // Otherwise, extend the path.
-    // Update the grid for the new cell regardless of whether it's an endpoint.
-    grid[row][col] = currentColor;
-    grid = grid.map((r) => [...r]);
     currentPath.push([row, col]);
     pair.path = [...currentPath];
     pairs = [...pairs];
@@ -223,7 +193,9 @@
     }
   }
 
-  // End drawing (pointerup or Enter/Space release)
+  // End drawing.
+  // If the final cell is a valid endpoint for the pair, the drawn line is kept;
+  // otherwise, the path is cleared.
   function endDrawing() {
     if (!isDragging || !currentColor) return;
     const pair = getPair(currentColor);
@@ -235,30 +207,28 @@
     if (!validEnd) {
       revertCurrentPath();
     } else {
-      // For a valid completed line, update grid for the endpoint as well.
-      grid[lastRow][lastCol] = currentColor;
-      grid = grid.map((r) => [...r]);
+      // If valid, ensure the final endpoint is included.
+      if (!isEndpoint(pair, lastRow, lastCol)) {
+        currentPath.push([lastRow, lastCol]);
+        pair.path = [...currentPath];
+        pairs = [...pairs];
+      }
     }
     isDragging = false;
     currentColor = null;
     currentPath = [];
   }
 
-  // Revert the current path (clear non-endpoint cells)
+  // Revert the current path (clear the drawn path for the current pair).
   function revertCurrentPath() {
     const pair = getPair(currentColor);
-    currentPath.forEach(([r, c]) => {
-      grid[r][c] = null;
-    });
-    grid = grid.map((r) => [...r]);
+    currentPath = [];
     pair.path = [];
-    pairs = pairs.map((p) =>
-      p.color === currentColor ? { ...p, path: [] } : p
-    );
+    pairs = [...pairs];
     collidingCell = null;
   }
 
-  // Convert path to an SVG polyline string
+  // Helper: Convert a path (an array of [r, c]) into an SVG polyline points string.
   function pointsFor(path) {
     return path
       .map(([r, c]) => {
@@ -269,7 +239,7 @@
       .join(" ");
   }
 
-  // Container-level pointer move: figure out cell from event coords
+  // Container-level pointer move: Compute cell coordinates from event position.
   let containerEl;
   function handleContainerPointerMove(event) {
     if (!isDragging) return;
@@ -330,7 +300,6 @@
     }
   }
 
-  // Dynamic inline styles
   $: boardStyle = `
     grid-template-columns: repeat(${size}, ${cellSize}px);
     grid-template-rows: repeat(${size}, ${cellSize}px);
@@ -343,7 +312,6 @@
 </script>
 
 <Widget {props}>
-  <!-- The top-level container with pointer events -->
   <div
     class="container"
     bind:this={containerEl}
@@ -353,9 +321,8 @@
       if (isDragging) endDrawing();
     }}
   >
-    <!-- The grid -->
     <div class="board" style={boardStyle}>
-      {#each grid as row, r}
+      {#each computedGrid as row, r}
         {#each row as cellColor, c}
           <button
             id={`cell-${r}-${c}`}
@@ -374,7 +341,6 @@
       {/each}
     </div>
 
-    <!-- The SVG overlay for wires and endpoints -->
     <svg class="overlay" style={overlayStyle}>
       {#each pairs as pair}
         {#if pair.path && pair.path.length > 1}
@@ -428,14 +394,12 @@
     );
     pointer-events: none;
   }
-
   .board {
     display: grid;
     background-color: #111;
     padding: 0.25rem;
     border-radius: 0.75rem;
   }
-
   .cell {
     border-radius: 0.5rem;
     border: none;
@@ -444,7 +408,9 @@
     -webkit-user-drag: none;
     user-drag: none;
   }
-
+  .cell.collision {
+    outline: 2px solid red;
+  }
   .overlay {
     position: absolute;
     top: calc(var(--frame-width) + 0.25rem);
