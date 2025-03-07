@@ -143,31 +143,44 @@
       }
     }
 
-    // If the cell is occupied by a different color, check if it's in our path (backtracking) or a collision
-    if (grid[row][col] && grid[row][col] !== currentColor) {
-      let index = currentPath.findIndex(([r, c]) => r === row && c === col);
-      if (index >= 0) {
-        // Backtracking: remove cells after this one
+    // Check if the cell is already in our current path (for backtracking)
+    const index = currentPath.findIndex(([r, c]) => r === row && c === col);
+    if (index >= 0) {
+      // If it's not the last cell, backtrack: remove all cells after this one
+      if (index < currentPath.length - 1) {
         currentPath = currentPath.slice(0, index + 1);
         const pair = getPair(currentColor);
         pair.path = [...currentPath];
+        // Clear any cells that have our color but are no longer in the current path,
+        // except for endpoints
+        for (let i = 0; i < size; i++) {
+          for (let j = 0; j < size; j++) {
+            if (grid[i][j] === currentColor) {
+              const inPath = currentPath.some(
+                ([pr, pc]) => pr === i && pc === j
+              );
+              const isEndpoint = pair.endpoints.some(
+                ([er, ec]) => er === i && ec === j
+              );
+              if (!inPath && !isEndpoint) {
+                grid[i][j] = null;
+              }
+            }
+          }
+        }
         grid = grid.map((r) => [...r]);
         pairs = [...pairs];
-        return;
-      } else {
-        // Otherwise, it's a collision – highlight the cell and do nothing
-        collidingCell = [row, col];
-        return;
       }
+      return;
     }
 
-    // If the cell is already ours and part of our path, do nothing
-    if (grid[row][col] === currentColor) {
-      const index = currentPath.findIndex(([r, c]) => r === row && c === col);
-      if (index >= 0) return;
+    // If the cell is occupied by a different color, highlight collision and do nothing
+    if (grid[row][col] && grid[row][col] !== currentColor) {
+      collidingCell = [row, col];
+      return;
     }
 
-    // Otherwise, mark the cell with currentColor and extend the path
+    // Otherwise, mark this cell with currentColor and extend the path
     grid[row][col] = currentColor;
     grid = grid.map((r) => [...r]);
 
