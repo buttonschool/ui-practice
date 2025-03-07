@@ -113,19 +113,39 @@
     return pairs.find((p) => p.color === color);
   }
 
-  // Start drawing a path from a cell (on pointerdown or Enter/Space)
+  // Update startDrawing function to clear an existing path when clicking an endpoint
   function startDrawing(r, c) {
     const color = grid[r][c];
     if (!color) return;
     const pair = getPair(color);
     if (!pair) return;
-
+    // If the clicked cell is an endpoint and the pair already has a drawn path, clear it.
+    const isEndpoint = pair.endpoints.some(([er, ec]) => er === r && ec === c);
+    if (isEndpoint && pair.path && pair.path.length > 1) {
+      clearPathForPair(pair);
+      return;
+    }
     isDragging = true;
     currentColor = color;
     currentPath = [[r, c]];
     pair.path = [...currentPath];
     collidingCell = null;
     pairs = [...pairs]; // Force reactivity
+  }
+
+  // New helper function to clear a pair's drawn path from the grid (except endpoints)
+  function clearPathForPair(pair) {
+    pair.path.forEach(([r, c]) => {
+      const isEndpoint = pair.endpoints.some(
+        ([er, ec]) => er === r && ec === c
+      );
+      if (!isEndpoint) {
+        grid[r][c] = null;
+      }
+    });
+    pair.path = [];
+    grid = grid.map((r) => [...r]);
+    pairs = pairs.map((p) => (p.color === pair.color ? { ...p, path: [] } : p));
   }
 
   // Move to a cell (pointer or keyboard)
