@@ -1,6 +1,7 @@
 <script>
   import Widget from "./Widget.svelte";
 
+  // A sample prop array for styling via your Widget
   let props = [
     {
       name: "frame-width",
@@ -13,12 +14,12 @@
     },
   ];
 
-  // Dimensions & styling
+  // Board configuration
   let size = 6;
   let cellSize = 50;
   let gridGap = 2;
 
-  // Your chosen color pairs + endpoints
+  // Define color pairs + endpoints
   let pairs = [
     {
       color: "hotpink",
@@ -62,77 +63,96 @@
     },
   ];
 
-  // Create a 2D array (size×size), initially null in every cell
+  // Create a size×size grid (null if empty, else color string)
   let grid = Array(size)
     .fill(null)
     .map(() => Array(size).fill(null));
 
-  // Place each pair’s endpoints onto the grid
+  // Place endpoints on the grid
   pairs.forEach((pair) => {
     pair.endpoints.forEach(([r, c]) => {
       grid[r][c] = pair.color;
     });
   });
 
-  // State for dragging
+  // Drag state
   let isDragging = false;
   let currentColor = null;
   let currentPath = [];
+  let collidingCell = null; // highlight if collision with another color
 
-  // Helper to find a pair object by color
+  // Helper: find a pair by color
   function getPair(color) {
     return pairs.find((p) => p.color === color);
   }
 
-  // Mouse down on a cell that has a color => start drawing that color
-  function handleMouseDown(row, col) {
-    console.log("MouseDown on cell", row, col);
-    const color = grid[row][col];
+  // Start drawing a path from a cell (on pointerdown or Enter/Space)
+  function startDrawing(r, c) {
+    const color = grid[r][c];
     if (!color) return;
-
     const pair = getPair(color);
     if (!pair) return;
 
     isDragging = true;
     currentColor = color;
-    currentPath = [[row, col]];
+    currentPath = [[r, c]];
+    pair.path = [...currentPath];
+    collidingCell = null;
+    pairs = [...pairs]; // Force reactivity
   }
 
-  // Mouse enters a new cell while dragging => continue drawing path
-  function handleMouseEnter(row, col) {
-    console.log("MouseEnter cell", row, col);
+  // Move to a cell (pointer or keyboard)
+  function handlePointerMove(row, col) {
     if (!isDragging || !currentColor) return;
 
-    // Collision detection: if occupied by a different color, revert
+    // If cell is occupied by a different color, check if it's in our path (backtracking) or a collision
     if (grid[row][col] && grid[row][col] !== currentColor) {
-      revertCurrentPath();
-      return;
+      let index = currentPath.findIndex(([r, c]) => r === row && c === col);
+      if (index >= 0) {
+        // This is a cell in our existing path => backtrack to that point
+        currentPath = currentPath.slice(0, index + 1);
+        const pair = getPair(currentColor);
+        pair.path = [...currentPath];
+        // Clear any later cells from the grid if needed
+        grid = grid.map((r) => [...r]);
+        pairs = [...pairs];
+        return;
+      } else {
+        // Collision with another color => highlight the cell
+        collidingCell = [row, col];
+        return;
+      }
     }
 
-    // Mark this cell with the current color
+    // If the cell is already ours and in the path, do nothing
+    if (grid[row][col] === currentColor) {
+      const index = currentPath.findIndex(([r, c]) => r === row && c === col);
+      if (index >= 0) return;
+    }
+
+    // Otherwise, occupy this cell with currentColor
     grid[row][col] = currentColor;
-    // Force reactivity by reassigning grid
     grid = grid.map((r) => [...r]);
 
     currentPath.push([row, col]);
     const pair = getPair(currentColor);
     pair.path = [...currentPath];
-    console.log("Current path for", currentColor, pair.path);
-
-    // Force reactivity by reassigning pairs
     pairs = [...pairs];
+
+    // If we were highlighting a collision, remove it if we've moved there
+    if (collidingCell && collidingCell[0] === row && collidingCell[1] === col) {
+      collidingCell = null;
+    }
   }
 
-  // Mouse up => check if we ended on a valid endpoint
-  function handleMouseUp() {
-    console.log("MouseUp");
+  // End drawing (pointerup or Enter/Space release)
+  function endDrawing() {
     if (!isDragging || !currentColor) return;
-
     const pair = getPair(currentColor);
     const [end1, end2] = pair.endpoints;
     const [lastRow, lastCol] = currentPath[currentPath.length - 1];
 
-    // Must end on the matching endpoint or revert
+    // Validate that we ended on the correct endpoint
     const validEnd =
       (lastRow === end1[0] && lastCol === end1[1]) ||
       (lastRow === end2[0] && lastCol === end2[1]);
@@ -146,9 +166,8 @@
     currentPath = [];
   }
 
-  // Revert any drawn cells that are not endpoints
+  // Revert the current path (clear non-endpoint cells)
   function revertCurrentPath() {
-    console.log("Reverting path:", currentPath);
     const pair = getPair(currentColor);
     currentPath.forEach(([r, c]) => {
       const isEndpoint = pair.endpoints.some(
@@ -160,18 +179,80 @@
     });
     grid = grid.map((r) => [...r]);
     pair.path = [];
+    collidingCell = null;
   }
 
-  // Convert path ([ [r,c], [r,c], ... ]) into an SVG polyline string
+  // Convert path to an SVG polyline string
   function pointsFor(path) {
     return path
       .map(([r, c]) => {
-        // Each cell is offset by (cellSize + gridGap) horizontally & vertically
         const x = c * (cellSize + gridGap) + cellSize / 2;
         const y = r * (cellSize + gridGap) + cellSize / 2;
         return `${x},${y}`;
       })
       .join(" ");
+  }
+
+  // Container-level pointer move: figure out cell from event coords
+  let containerEl;
+  function handleContainerPointerMove(event) {
+    if (!isDragging) return;
+    const boardEl = containerEl.querySelector(".board");
+    const boardRect = boardEl.getBoundingClientRect();
+    const relX = event.clientX - boardRect.left;
+    const relY = event.clientY - boardRect.top;
+    const col = Math.floor(relX / (cellSize + gridGap));
+    const row = Math.floor(relY / (cellSize + gridGap));
+    if (row >= 0 && row < size && col >= 0 && col < size) {
+      handlePointerMove(row, col);
+    }
+  }
+
+  // Keyboard support
+  function handleKeyDown(r, c, event) {
+    const key = event.key;
+    if (key === "Enter" || key === " ") {
+      event.preventDefault();
+      if (!isDragging) {
+        startDrawing(r, c);
+      } else {
+        handlePointerMove(r, c);
+      }
+    } else if (
+      key === "ArrowUp" ||
+      key === "ArrowDown" ||
+      key === "ArrowLeft" ||
+      key === "ArrowRight"
+    ) {
+      event.preventDefault();
+      let newRow = r;
+      let newCol = c;
+      if (key === "ArrowUp") newRow = Math.max(r - 1, 0);
+      if (key === "ArrowDown") newRow = Math.min(r + 1, size - 1);
+      if (key === "ArrowLeft") newCol = Math.max(c - 1, 0);
+      if (key === "ArrowRight") newCol = Math.min(c + 1, size - 1);
+
+      const nextCell = document.getElementById(`cell-${newRow}-${newCol}`);
+      if (nextCell) {
+        nextCell.focus();
+        if (isDragging) {
+          handlePointerMove(newRow, newCol);
+        }
+      }
+    } else if (key === "Escape") {
+      if (isDragging) {
+        revertCurrentPath();
+        isDragging = false;
+        currentColor = null;
+        currentPath = [];
+      }
+    }
+  }
+
+  function handleKeyUp(r, c, event) {
+    if ((event.key === "Enter" || event.key === " ") && isDragging) {
+      endDrawing();
+    }
   }
 
   // Dynamic inline styles
@@ -187,37 +268,42 @@
 </script>
 
 <Widget {props}>
-  <!-- svelte-ignore a11y-no-noninteractive-element-interactions -->
-  <div class="container" role="application" on:mouseup|capture={handleMouseUp}>
-    <!-- The clickable grid -->
+  <!-- The top-level container with pointer events -->
+  <div
+    class="container"
+    bind:this={containerEl}
+    role="application"
+    on:pointermove={handleContainerPointerMove}
+    on:pointerup|capture={() => {
+      if (isDragging) endDrawing();
+    }}
+  >
+    <!-- The grid -->
     <div class="board" style={boardStyle}>
       {#each grid as row, r}
         {#each row as cellColor, c}
           <button
-            class="cell"
+            id={`cell-${r}-${c}`}
+            class="cell {collidingCell &&
+            collidingCell[0] === r &&
+            collidingCell[1] === c
+              ? 'collision'
+              : ''}"
             style="width: {cellSize}px; height: {cellSize}px; --color: {cellColor ||
               'transparent'}"
-            on:mousedown|preventDefault={() => handleMouseDown(r, c)}
-            on:mouseenter={() => handleMouseEnter(r, c)}
-          ></button>
+            on:pointerdown|preventDefault={() => startDrawing(r, c)}
+            on:keydown={(e) => handleKeyDown(r, c, e)}
+            on:keyup={(e) => handleKeyUp(r, c, e)}
+          />
         {/each}
       {/each}
     </div>
 
-    <!-- SVG overlay for drawing lines and showing endpoints -->
+    <!-- The SVG overlay for wires and endpoints -->
     <svg class="overlay" style={overlayStyle}>
       {#each pairs as pair}
         {#if pair.path && pair.path.length > 1}
-          <!-- White underlay for contrast -->
-          <!-- <polyline
-            stroke="white"
-            stroke-width="14"
-            fill="none"
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            points={pointsFor(pair.path)}
-          /> -->
-          <!-- Colored wire on top -->
+          <!-- Just a plain line, no dash offset animation -->
           <polyline
             stroke={pair.color}
             stroke-width="8"
@@ -227,8 +313,6 @@
             points={pointsFor(pair.path)}
           />
         {/if}
-
-        <!-- Draw endpoints as circles so they're visible -->
         {#each pair.endpoints as [r, c]}
           <circle
             cx={c * (cellSize + gridGap) + cellSize / 2}
@@ -282,15 +366,15 @@
     border: none;
     background-color: #333;
     background-color: color-mix(in oklch, #333 80%, var(--color));
-    /* Ensures no browser-native drag starts if you move quickly */
     -webkit-user-drag: none;
+    user-drag: none;
   }
 
   .overlay {
     position: absolute;
     top: calc(var(--frame-width) + 0.25rem);
     left: calc(var(--frame-width) + 0.25rem);
-    pointer-events: none; /* Let clicks pass through to .board */
+    pointer-events: none;
     z-index: 10;
   }
 </style>
