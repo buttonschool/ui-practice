@@ -3,6 +3,7 @@
 
   let props = [
     {
+      group: "Hover Effects",
       name: "scale",
       label: "Scale",
       value: 1.25,
@@ -12,6 +13,7 @@
       unit: "",
     },
     {
+      group: "Hover Effects",
       name: "tilt",
       label: "Tilt",
       value: 70,
@@ -21,6 +23,7 @@
       unit: "deg",
     },
     {
+      group: "Hover Effects",
       name: "shift",
       label: "Shift",
       value: 20,

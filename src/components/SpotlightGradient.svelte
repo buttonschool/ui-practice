@@ -3,8 +3,9 @@
 
   let props = [
     {
+      group: "Color Hues",
       name: "page-hue",
-      label: "Page Hue",
+      label: "Canvas",
       value: 275,
       min: 0,
       max: 360,
@@ -12,8 +13,9 @@
       unit: "",
     },
     {
+      group: "Color Hues",
       name: "left-hue",
-      label: "Left Hue",
+      label: "Left Spotlight",
       value: 25,
       min: 0,
       max: 360,
@@ -21,8 +23,9 @@
       unit: "",
     },
     {
+      group: "Color Hues",
       name: "right-hue",
-      label: "Right Hue",
+      label: "Right Spotlight",
       value: 70,
       min: 0,
       max: 360,
